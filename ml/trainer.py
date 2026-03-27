@@ -128,9 +128,9 @@ class MotogpTrainer:
         test_df = dataset[dataset["season"] >= TEST_SEASONS_MIN].copy()
 
         logger.info(
-            "[%s] Split sizes — train=%d (≤%d), val=%d (%d-%d), test=%d (≥%d)",
+            "[%s] Split sizes -- train=%d (<=2017), val=%d (%d-%d), test=%d (>=%d)",
             category,
-            len(train_df), TRAIN_SEASONS_MAX,
+            len(train_df),
             len(val_df), VAL_SEASONS_MIN, VAL_SEASONS_MAX,
             len(test_df), TEST_SEASONS_MIN,
         )

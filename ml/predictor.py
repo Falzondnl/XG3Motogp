@@ -68,15 +68,30 @@ def _harville_top_n(win_probs: np.ndarray, top_n: int) -> np.ndarray:
                     p_3rd += probs[j] * (probs[k] / rest_j) * (probs[i] / rest_jk)
             result[i] = p_win + p_2nd + p_3rd
     else:
-        # Simplified Harville approximation for large fields or top-N > 3
+        # Simplified Harville approximation for large fields or top-N > 3.
+        # For each slot, we consider the contribution of OTHER riders being placed first.
+        # The simplest stable approximation: marginalise over which rider wins each slot.
+        # P(i in top-k) = 1 - prod over k slots of (1 - p_i / remaining_total)
+        # where remaining_total decreases by the average remaining probability.
+        # This is the standard Harville simplification.
+        avg_other_prob = (1.0 - probs) / max(n - 1, 1)  # avg prob of one other rider
         for i in range(n):
-            remaining_sum = 1.0
-            p_not_in_top = 1.0
-            for _ in range(top_n):
-                p_this_slot = probs[i] / max(remaining_sum, 1e-9)
-                p_not_in_top *= (1.0 - p_this_slot)
-                remaining_sum = max(remaining_sum - probs[i], 1e-9)
-            result[i] = 1.0 - p_not_in_top
+            p_i = probs[i]
+            remaining_total = 1.0
+            p_not_placed = 1.0
+            for slot in range(top_n):
+                p_win_this_slot = p_i / max(remaining_total, 1e-9)
+                p_not_placed *= max(1.0 - p_win_this_slot, 0.0)
+                # After this slot, one other rider is placed: reduce remaining total
+                # by the conditional expectation of the winning probability of that rider.
+                # For the simple approximation: reduce by (remaining_total - p_i) / (n - slot - 1)
+                # i.e., one average-other-rider is placed.
+                n_remaining_others = n - slot - 1
+                if n_remaining_others <= 0:
+                    break
+                avg_other_removed = (remaining_total - p_i) / n_remaining_others
+                remaining_total = max(remaining_total - avg_other_removed, p_i + 1e-9)
+            result[i] = 1.0 - p_not_placed
 
     return np.clip(result, 0.0, 1.0)
 
