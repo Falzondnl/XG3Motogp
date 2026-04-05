@@ -23,6 +23,7 @@ from config import DEBUG, PORT, SERVICE_NAME, SERVICE_VERSION, R0_DIR, R1_DIR, R
 from ml.predictor import MotogpPredictor
 from feeds.optic_odds import OpticOddsFeed
 from api.routes import health, races, admin
+from api.routes.settlement import router as settlement_router
 
 logging.basicConfig(
     level=logging.DEBUG if DEBUG else logging.INFO,
@@ -106,6 +107,7 @@ def create_app() -> FastAPI:
         prefix="/api/v1/motogp/admin",
         tags=["admin"],
     )
+    app.include_router(settlement_router)
 
     @app.get("/", include_in_schema=False)
     async def root() -> JSONResponse:
