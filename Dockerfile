@@ -19,9 +19,9 @@ COPY . .
 # Expose service port
 EXPOSE 8032
 
-# Health check
+# Health check — uses $PORT with fallback so it works both locally and on Railway
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8032/health')" || exit 1
+    CMD python -c "import urllib.request,os; urllib.request.urlopen('http://localhost:' + os.environ.get('PORT','8032') + '/health')" || exit 1
 
-# Run application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8032"]
+# Run application — shell form so $PORT is expanded from Railway env
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8032}
