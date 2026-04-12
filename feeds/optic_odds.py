@@ -14,7 +14,7 @@ from config import OPTIC_ODDS_API_KEY, OPTIC_ODDS_BASE_URL, OPTIC_ODDS_SPORT_ID
 logger = logging.getLogger(__name__)
 
 _TIMEOUT = 10.0
-_LEAGUE_ID = "formula_1"   # Optic Odds league ID for MotoGP — override when known
+_LEAGUE_ID = "moto_gp"  # Optic Odds league slug for MotoGP premier class (motorsports sport)
 
 
 class OpticOddsFeed:
@@ -40,6 +40,7 @@ class OpticOddsFeed:
             "key": self._api_key,
             "sportsbook": "pinnacle",
             "sport": self._sport,
+            "league": _LEAGUE_ID,
             "is_live": "false",
             "limit": min(limit, 100),
         }
