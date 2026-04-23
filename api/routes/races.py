@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 
 from api._deps import get_predictor, get_optic_feed
@@ -202,6 +202,55 @@ async def price_h2h(
         "category": body.category,
         "season": body.season,
         "h2h_market": h2h_market,
+    }
+
+
+@router.get("")
+@router.get("/")
+async def list_races(
+    request: Request,
+) -> dict[str, Any]:
+    """
+    GET /api/v1/motogp/races — Race catalogue summary.
+
+    Returns service readiness state, active categories, and rider/circuit counts
+    from the loaded predictor.  Optic Odds does NOT carry MotoGP (verified 2026-04-13);
+    the canonical fixture source is the internal MotoGP calendar embedded in the
+    trained feature extractor.  Use /admin/status for full model detail.
+    """
+    predictor = getattr(request.app.state, "predictor", None)
+
+    categories: list[str] = []
+    rider_count: int = 0
+    circuit_count: int = 0
+    model_loaded: bool = False
+
+    if predictor is not None and predictor.is_loaded:
+        model_loaded = True
+        categories = predictor.active_categories
+        rider_count = predictor.rider_count
+        # Extract circuit ELO count from MotoGP model extractor if present
+        from config import CATEGORY_MOTOGP
+        motogp_model = getattr(predictor, "_models", {}).get(CATEGORY_MOTOGP)
+        if motogp_model is not None:
+            ext = getattr(motogp_model, "extractor", None)
+            if ext is not None:
+                circuit_count = int(getattr(ext, "circuit_elo_count", 0))
+
+    return {
+        "sport": "motogp",
+        "model_loaded": model_loaded,
+        "categories": categories,
+        "rider_count": rider_count,
+        "circuit_count": circuit_count,
+        "fixture_source": "internal_calendar",
+        "optic_odds_available": False,
+        "note": (
+            "Optic Odds does not carry MotoGP. "
+            "Use POST /api/v1/motogp/races/price to price a race, "
+            "GET /api/v1/motogp/races/upcoming for Optic feed (currently empty), "
+            "or GET /api/v1/motogp/admin/status for full model detail."
+        ),
     }
 
 
