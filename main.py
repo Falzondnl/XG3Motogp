@@ -25,6 +25,7 @@ from feeds.optic_odds import OpticOddsFeed
 from api.routes import health, races, admin
 from api.routes.outrights import router as outrights_router
 from api.routes.settlement import router as settlement_router
+from api.routes.predict import router as predict_router
 
 # ---------------------------------------------------------------------------
 # Sentry error monitoring — set SENTRY_DSN env var in Railway to activate
@@ -137,6 +138,11 @@ def create_app() -> FastAPI:
         tags=["outrights"],
     )
     app.include_router(settlement_router)
+    app.include_router(
+        predict_router,
+        prefix="/api/v1/motogp",
+        tags=["predict"],
+    )
 
     @app.get("/", include_in_schema=False)
     async def root() -> JSONResponse:
